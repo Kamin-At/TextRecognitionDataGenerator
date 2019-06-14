@@ -11,6 +11,85 @@ def generate(text, font, text_color, font_size, orientation, space_width, fit):
     else:
         raise ValueError("Unknown orientation " + str(orientation))
 
+def _generate_car_plate_text_with_BG(str1,str2,str3,font1,font2,font3,type_of_plate,type_of_text):
+    ##the frame of car plates is not included
+    w,h = font1.getsize(str1)
+    w2,h2 = font2.getsize(str2)
+    w3,h3 = font3.getsize(str3)
+    Len1 = len(str1)
+    Len2 = len(str2)
+    W= 330
+    H = 90
+    cont =  20 + random.randint(-10,10)
+    cont2 =  30 + random.randint(-15,15)
+    
+    if type_of_plate == 0: #red plate
+        img = Image.new("RGBA", (W, H), (197 - cont, 46 - cont, 27 - cont))
+    elif type_of_plate == 1: #white plate
+        img = Image.new("RGBA", (W, H), (243 - cont, 238 - cont, 248 - cont))
+    elif type_of_plate == 2: #yellow plate
+        img = Image.new("RGBA", (W, H), (221 - cont, 171 - cont, 22 - cont))
+    else:
+        raise Exception("Wrong type_of_plate")
+    
+    draw = ImageDraw.Draw(img)
+    pos1 = (( 175-Len1*35)/2 + 140 - 15*(3 - Len2), 55-h)
+    pos2 = ( 15 + (105 - 35*Len2)/2,-72)
+    
+    if type_of_text == 0:#black text
+        draw.text(pos2, str2, font = font2, fill = (75 - cont2, 44 - cont2, 40 - cont2))
+        draw.text(pos1, str1, font = font1, fill = (75 - cont2, 44 - cont2, 40 - cont2))
+        draw.text(((W-w3)/2,43), str3, font = font3, fill = (75 - cont2, 44 - cont2, 40 - cont2))
+    elif type_of_text == 1:#white text
+        draw.text(pos2, str2, font = font2, fill = (200 - cont2, 192 - cont2, 185 - cont2))
+        draw.text(pos1, str1, font = font1, fill = (200 - cont2, 192 - cont2, 185 - cont2))
+        draw.text(((W-w3)/2,43), str3, font = font3, fill = (200 - cont2, 192 - cont2, 185 - cont2))
+    elif type_of_text == 2: #blue text
+        draw.text(pos2, str2, font = font2, fill = (66 - cont2, 98 - cont2, 133 - cont2))
+        draw.text(pos1, str1, font = font1, fill = (66 - cont2, 98 - cont2, 133 - cont2))
+        draw.text(((W-w3)/2,43), str3, font = font3, fill = (66 - cont2, 98 - cont2, 133 - cont2))
+    elif type_of_text == 3: #green text
+        draw.text(pos2, str2, font = font2, fill = (53 - cont2, 109 - cont2, 73 - cont2))
+        draw.text(pos1, str1, font = font1, fill = (53 - cont2, 109 - cont2, 73 - cont2))
+        draw.text(((W-w3)/2,43), str3, font = font3, fill = (53 - cont2, 109 - cont2, 73 - cont2))
+    else:
+        raise Exception("Wrong type_of_text")
+    #del draw
+    
+    
+    words = str2
+    ch = [ch for word in words for ch in word if ch != ' ']
+    sum_w = 0
+    chars = []
+    coords = []
+    for i in range (len(ch)):
+        chars.append(ch[i])
+        tmp_w, tmp_h = font2.getsize(ch[i])
+        x_min = pos2[0] +  sum_w
+        y_min = 0#pos2[1]
+        x_max = pos2[0] + sum_w + tmp_w
+        y_max = tmp_h*0.5#pos2[1] + tmp_h
+        coords.append((x_min, y_min, x_max, y_max))
+        sum_w = sum_w + tmp_w
+        #draw.rectangle((x_min,y_min,x_max,y_max), fill=None, outline=(0,0,0))
+
+    words = str1
+    ch = [ch for word in words for ch in word if ch != ' ']
+    sum_w = 0
+    for i in range (len(ch)):
+        chars.append(ch[i])
+        tmp_w, tmp_h = font1.getsize(ch[i])
+        x_min = pos1[0] +  sum_w
+        y_min = 0#pos2[1]
+        x_max = pos1[0] + sum_w + tmp_w
+        y_max = tmp_h*0.9#pos2[1] + tmp_h
+        coords.append((x_min, y_min, x_max, y_max))
+        sum_w = sum_w + tmp_w
+        #draw.rectangle((x_min,y_min,x_max,y_max), fill=None, outline=(0,0,0))
+    #img1.show()
+    
+    return img, coords, chars
+
 def _generate_horizontal_text(text, font, text_color, font_size, space_width, fit):
     font = "fonts/th/sarun.ttf"
     image_font = ImageFont.truetype(font=font, size=font_size)

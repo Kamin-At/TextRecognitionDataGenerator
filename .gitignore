@@ -104,4 +104,5 @@ ENV/
 /TextRecognitionDataGenerator/out
 /TextRecognitionDataGenerator/pictures
 /TextRecognitionDataGenerator/texts
+/TextRecognitionDataGenerator/tmp.txt
 *.ipynb

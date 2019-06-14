@@ -19,6 +19,27 @@ def gaussian_noise(height, width):
 
     return Image.fromarray(image).convert('RGBA')
 
+def car_plate_frame (frame_number):
+    #there are 
+    os.chdir('D:\\min\\car_licence_plate')
+    if frame_number == 0:
+        BG = Image.open('4.jpg')
+    elif frame_number == 1:
+        BG = Image.open('3.jpg')
+    elif frame_number == 2:
+        BG = Image.open('10.jpg')
+    elif frame_number == 3:
+        BG = Image.open('19.jpg')
+    elif frame_number == 4:
+        BG = Image.open('18_1.jpg')
+    elif frame_number == 5:
+        BG = Image.open('20.jpg')
+    elif frame_number == 6:
+        BG = Image.open('21.jpg')
+    else:
+        raise Exception("Wrong Frame_number")
+    return BG
+
 def plain_white(height, width):
     """
         Create a plain white background

@@ -2,16 +2,254 @@ import os
 import random
 import math
 
+from imgaug import augmenters as aug
 from PIL import Image, ImageFilter, ImageDraw
 
 import computer_text_generator
 import background_generator
 import distorsion_generator
 import xml_util
+import numpy as np
+
 try:
     import handwritten_text_generator
 except ImportError as e:
     print('Missing modules for handwritten text generation.')
+
+class CarPlateGenerator(object):
+    @classmethod
+    def generate_from_tuple(cls, t):
+        """
+            Same as generate, but takes all parameters as one tuple
+        """
+
+        cls.generate(*t)
+
+    @classmethod
+    def generate(cls, index, text, text2, font1, font2, font3, out_dir, name_format, extension, type_of_plate, type_of_text, frame_number, direction_edge_detection, gradient, GRADIENT, Shadow, DARKNESS, blur, blur_kernel_size, gaussian_Noise, std_gaussian, angle_to_rotate):
+        image = None
+        strings = text.split()
+        str1 = strings[1]
+        str2 = strings[0]
+        
+        ##########################
+        # Create picture of text #
+        ##########################
+        
+        txt_img, coords, chars = computer_text_generator._generate_car_plate_text_with_BG(str1,str2,text2,font1,font2,font3,type_of_plate,type_of_text)
+        
+        
+        
+        #############################
+        # Generate background image #
+        #############################
+        
+        BG = background_generator.car_plate_frame(frame_number)
+        
+        #############################
+        # Place text with alignment #
+        #############################
+
+        W= 330
+        H = 90
+        
+        kernel_size = 3
+        ###apply random direction of edge detection
+        if direction_edge_detection == 0:
+            kernel = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
+        elif direction_edge_detection == 1:
+            kernel = np.array([[1,0,-1],[1,0,-1],[1,0,-1]])
+        elif direction_edge_detection == 2:
+            kernel = np.array([[1,1,1],[0,0,0],[-1,-1,-1]])
+        else:
+            kernel = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
+
+        kernel = ImageFilter.Kernel(kernel.shape, kernel = kernel.flatten(), scale=kernel_size**2 , offset=0)
+        img22 = txt_img.filter(kernel)
+        img22 = img22.convert(mode = 'L')
+        #img22.show()
+        Arr = np.array(txt_img)
+        Arr2 = np.array(img22)
+
+        for i in range(Arr2.shape[0]):
+            for j in range(Arr2.shape[1]):
+                if Arr2[i][j] > 10:
+                    Arr[i,j,:] = np.clip( Arr[i,j,:] + 120, a_min = 0, a_max = 255)
+        img = Image.fromarray(Arr)
+        
+        draw = ImageDraw.Draw(img)
+        Arr = np.array(img)
+        
+        ################
+        ### gradient ###
+        ################
+        
+        if gradient:
+            i_m = random.randint(0,Arr[:,:,0].shape[0])
+            j_m = random.randint(0,Arr[:,:,0].shape[1])
+            
+            if i_m == j_m:
+                if random.randint(0,1):
+                    i_m = i_m + 1
+                else:
+                    j_m = j_m + 1
+            c = random.randint(0,1)
+            x = np.zeros((Arr[:,:,0].shape[0],Arr[:,:,0].shape[1]))
+            a = 1/(i_m - j_m)
+            b = a
+            k = i_m/(i_m - j_m)
+            if c:
+                for i in range (Arr[:,:,0].shape[0]):
+                    for j in range (Arr[:,:,0].shape[1]):
+                        x[i][j] = a*(i-i_m) + b*(j-j_m) + k
+            else:
+                for i in range (Arr[:,:,0].shape[0]):
+                    for j in range (Arr[:,:,0].shape[1]):
+                        x[i][j] = -a*(i-i_m) - b*(j-j_m) + k
+            Max = np.amax(x)
+            Min = np.amin(x)
+            x = (x-np.full((Arr[:,:,0].shape[0],Arr[:,:,0].shape[1]),Min))/(Max - Min)
+            x = x*GRADIENT
+
+            Arr[:,:,0] = np.clip(Arr[:,:,0] + x, a_min = 0, a_max = 255) 
+            Arr[:,:,1] = np.clip(Arr[:,:,1] + x, a_min = 0, a_max = 255) 
+            Arr[:,:,2] = np.clip(Arr[:,:,2] + x, a_min = 0, a_max = 255) 
+        #####################################
+        # Combine background and text_image #
+        #####################################   
+        img = Image.fromarray(Arr)
+        
+        if frame_number == 0:
+            new_w = 136
+            new_h = 54#for 4.jpg
+        elif frame_number == 1:
+            new_w = 165
+            new_h = 60#for 3.jpg
+        elif frame_number == 2:
+            new_w = 175
+            new_h = 67#for 10.jpg
+        elif frame_number == 3:
+            new_w = 117
+            new_h = 55#for 19.jpg
+        elif frame_number == 4:
+            new_w = 387
+            new_h = 165#for 18_1.jpg
+        elif frame_number == 5:
+            new_w = 120
+            new_h = 51#for 20.jpg
+        elif frame_number == 6:
+            new_w = 590
+            new_h = 190#for 21.jpg
+            
+        else:
+            raise Exception("Wrong Frame_number")
+            
+        img = img.resize( (new_w,new_h), resample=0)
+        
+        if frame_number == 0:
+            BG.paste(img, box=(34,20), mask=None)#for 4.jpg
+        elif frame_number == 1:
+            BG.paste(img, box=(15,17), mask=None)#for 3.jpg
+        elif frame_number == 2:
+            BG.paste(img, box=(13,9), mask=None)#for 10.jpg
+        elif frame_number == 3:
+            BG.paste(img, box=(92,35), mask=None)#for 19.jpg
+        elif frame_number == 4:
+            BG.paste(img, box=(4,4), mask=None)#for 18_1.jpg
+        elif frame_number == 5:
+            BG.paste(img, box=(70,57), mask=None)#for 20.jpg
+        elif frame_number == 6:
+            BG.paste(img, box=(5,5), mask=None)#for 21.jpg
+        else:
+            raise Exception("Wrong Frame_number")
+        
+        coords = coordinate_resize(W, H, new_w, new_h, frame_number ,coords)
+        ### After this the whole image is on BG (img is unused anymore) 
+        
+        ################
+        #### shadow ####
+        ################
+        if Shadow:
+            Arr = np.array(BG)
+            
+            c = random.randint(int(Arr[:,:,0].shape[0]/5),int(Arr[:,:,0].shape[0]/1.2))
+            shadow = np.ones((Arr[:,:,0].shape[0],Arr[:,:,0].shape[1]))
+            for i in range (c,Arr[:,:,0].shape[0]):
+                shadow[i,:] = 0
+
+            shadow = shadow * DARKNESS
+            Arr[:,:,0] = np.clip(Arr[:,:,0] + shadow, a_min = 0, a_max = 255) 
+            Arr[:,:,1] = np.clip(Arr[:,:,1] + shadow, a_min = 0, a_max = 255) 
+            Arr[:,:,2] = np.clip(Arr[:,:,2] + shadow, a_min = 0, a_max = 255) 
+
+            CarPlate_img = Image.fromarray(Arr)
+        else:
+            CarPlate_img = BG
+        #######################################
+        # Apply mean filter to blur the image #
+        #######################################
+        if blur:
+            kernel_size = blur_kernel_size
+            kernel = np.ones((kernel_size,kernel_size))
+            kernel = ImageFilter.Kernel(kernel.shape, kernel = kernel.flatten(), scale=kernel_size**2 , offset=0)
+            CarPlate_img = CarPlate_img.filter(kernel)#Apply mean filter
+
+        ####################
+        ## Apply rotation ##
+        ####################
+        
+        tmp_W, tmp_H = CarPlate_img.size
+        CarPlate_img = CarPlate_img.rotate(angle_to_rotate)
+        draw = ImageDraw.Draw(CarPlate_img)
+
+        for i in coords:
+            x1, y1 = i[0]
+            x2, y2 = i[1]
+            x_1, y_1 = rotate_point((tmp_W/2,tmp_H/2), (x1, y1), angle_to_rotate * math.pi / 180)
+            x_2, y_2 = rotate_point((tmp_W/2,tmp_H/2), (x1, y2), angle_to_rotate * math.pi / 180)
+            x_3, y_3 = rotate_point((tmp_W/2,tmp_H/2), (x2, y1), angle_to_rotate * math.pi / 180)
+            x_4, y_4 = rotate_point((tmp_W/2,tmp_H/2), (x2, y2), angle_to_rotate * math.pi / 180)
+            x1 = int(min([x_1,x_2,x_3,x_4]))
+            x2 = int(max([x_1,x_2,x_3,x_4]))
+            y1 = int(min([y_1,y_2,y_3,y_4]))
+            y2 = int(max([y_1,y_2,y_3,y_4]))
+            coords[coords.index(i)] = (x1, y1, x2, y2)
+            #draw.rectangle((x1,y1,x2,y2), fill=None, outline=(255,255,255))
+        
+        ##########################
+        ## Apply gaussian_noise ##
+        ##########################
+        if gaussian_Noise:
+            Arr = np.array(CarPlate_img)
+            seq = aug.Sequential([aug.AdditiveGaussianNoise(0, std_gaussian , per_channel=0.1)])#mean of noise is 0
+            CarPlate_img = seq(image = Arr)
+            CarPlate_img_final = Image.fromarray(CarPlate_img)
+
+        #####################################
+        # Generate name for resulting image #
+        #####################################
+        if name_format == 0:
+            image_name = '{}_{}.{}'.format(text, str(index), extension)
+        elif name_format == 1:
+            image_name = '{}_{}.{}'.format(str(index), text, extension)
+        elif name_format == 2:
+            image_name = '{}.{}'.format(str(index),extension)
+        else:
+            print('{} is not a valid name format. Using default.'.format(name_format))
+            image_name = '{}_{}.{}'.format(text, str(index), extension)
+        tmp_w , tmp_h = CarPlate_img_final.size
+        coords = coordinate_resize(tmp_w, tmp_h, 600, 200, -1 ,coords)
+        print(coords)
+        #write xml 
+        xml_util.generate_xml(image_name.split('.')[0], CarPlate_img_final.size, coords, chars, out_dir)    
+        CarPlate_img_final = CarPlate_img_final.resize( (600,200), resample=0)
+        draw = ImageDraw.Draw(CarPlate_img_final)
+        for i in coords:
+            x1, y1 = i[0]
+            x2, y2 = i[1]
+            draw.rectangle((x1,y1,x2,y2), fill=None, outline=(255,255,255))
+        # Save the image
+        CarPlate_img_final.convert('RGB').save(os.path.join(out_dir, image_name))
 
 
 class FakeTextDataGenerator(object):
@@ -208,8 +446,46 @@ def rotate_point(origin, point, angle):
     ox, oy = origin
     px, py = point
 
-    qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
-    qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
+    qx = ox + math.cos(angle) * (px - ox) + math.sin(angle) * (py - oy)
+    qy = oy - math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
     return qx, qy
 
+def coordinate_resize(old_w, old_h, new_w, new_h, frame_number ,coordinates):
+    th_w = new_w/old_w
+    th_h = new_h/old_h
+    if frame_number == 0:
+        trans_w = 34
+        trans_h = 20
+    elif frame_number == 1:
+        trans_w = 15
+        trans_h = 17
+    elif frame_number == 2:
+        trans_w = 13
+        trans_h = 9
+    elif frame_number == 3:
+        trans_w = 92
+        trans_h = 35
+    elif frame_number == 4:
+        trans_w = 4
+        trans_h = 4
+    elif frame_number == 5:
+        trans_w = 70
+        trans_h = 57
+    elif frame_number == 6:
+        trans_w = 5
+        trans_h = 5
+    elif frame_number == -1:
+        trans_w = 0
+        trans_h = 0
+    else:
+        raise Exception("Wrong Frame_number")
+    
+    for i in range (len(coordinates)):
+        (x_min, y_min, x_max, y_max) = coordinates[i]
+        x_min = x_min * th_w + trans_w
+        x_max = x_max * th_w + trans_w
+        y_min = y_min * th_h + trans_h
+        y_max = y_max * th_h + trans_h
+        coordinates[i] = [(x_min, y_min), (x_max, y_max)]
+    return coordinates
     
