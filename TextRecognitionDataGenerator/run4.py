@@ -3,7 +3,7 @@ import os, errno
 import random
 import string
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
-
+import math
 from tqdm import tqdm
 from string_generator import (
     create_strings_from_dict,
@@ -310,7 +310,20 @@ def main():
     fonts = load_fonts(args.language)
 
     # Creating synthetic sentences (or word)
-    strings = create_strings_from_dict(args.length, args.random, args.count, lang_dict)
+    os.chdir('D:\\min\\car_licence_plate\\TextRecognitionDataGenerator\\TextRecognitionDataGenerator\\dicts')
+    N_per_char = math.floor(args.count/44)
+    N_res = args.count - N_per_char*44
+    strings = []
+    with open('th3.txt','r', encoding = 'UTF-8') as f:
+        for line in f:
+            tmp_string = line[:-1]
+            for i in range (N_per_char):
+                strings.append(tmp_string)
+        for i in range (N_res):
+            strings.append(tmp_string)
+                
+    
+    #create_strings_from_dict(args.length, args.random, args.count, lang_dict)
     strings2 = create_strings_from_dict(args.length, args.random, args.count, lang_dict2)
     
     os.chdir(args.input_file)
@@ -318,7 +331,8 @@ def main():
     
     font2 = ImageFont.truetype('sarun.ttf',85,encoding = "utf-8")
     font3 = ImageFont.truetype('sarun.ttf',30,encoding = "utf-8")
-    font1 = ImageFont.truetype('HWYGOTH.ttf',75,encoding = "utf-8")
+    #font1 = ImageFont.truetype('HWYGOTH.ttf',75,encoding = "utf-8")
+    font1 = ImageFont.truetype('sarun.ttf',85,encoding = "utf-8")
     
     string_count = len(strings)
     print("string_count = " + str(string_count))
@@ -354,17 +368,15 @@ def main():
         else:
             Type_of_plates.append(1)
             Type_of_texts.append(3)"""
-        
-		tmp_rand = random.randint(0,1)
+            
+        tmp_rand = random.randint(0,1)
         if tmp_rand == 0:
             Type_of_plates.append(1)
             Type_of_texts.append(0)
         else:
             Type_of_plates.append(2)
             Type_of_texts.append(0)
-
-			
-		
+            
         tmp_rand = random.randint(0,6)
         if tmp_rand == 0:
             Plate_numbers.append(tmp_rand)
@@ -439,7 +451,7 @@ def main():
             1,
             STD_GAUSSIAN[i],
             ANGLE_TO_ROTATE[i]
-			)
+            )
 
 
     if args.name_format == 2:

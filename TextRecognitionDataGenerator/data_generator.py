@@ -29,6 +29,7 @@ class CarPlateGenerator(object):
     def generate(cls, index, text, text2, font1, font2, font3, out_dir, name_format, extension, type_of_plate, type_of_text, frame_number, direction_edge_detection, gradient, GRADIENT, Shadow, DARKNESS, blur, blur_kernel_size, gaussian_Noise, std_gaussian, angle_to_rotate):
         image = None
         strings = text.split()
+        print(strings)
         str1 = strings[1]
         str2 = strings[0]
         
@@ -241,13 +242,13 @@ class CarPlateGenerator(object):
         coords = coordinate_resize(tmp_w, tmp_h, 600, 200, -1 ,coords)
         print(coords)
         #write xml 
-        xml_util.generate_xml(image_name.split('.')[0], CarPlate_img_final.size, coords, chars, out_dir)    
         CarPlate_img_final = CarPlate_img_final.resize( (600,200), resample=0)
+        xml_util.generate_xml(image_name.split('.')[0], CarPlate_img_final.size, coords, chars, out_dir)
         draw = ImageDraw.Draw(CarPlate_img_final)
-        for i in coords:
-            x1, y1 = i[0]
-            x2, y2 = i[1]
-            draw.rectangle((x1,y1,x2,y2), fill=None, outline=(255,255,255))
+        #for i in coords:
+            #x1, y1 = i[0]
+            #x2, y2 = i[1]
+            #draw.rectangle((x1,y1,x2,y2), fill=None, outline=(255,255,255))
         # Save the image
         CarPlate_img_final.convert('RGB').save(os.path.join(out_dir, image_name))
 
